@@ -1,4 +1,5 @@
 #include "KinovaRobotModule.h"
+#include <mc_rbdyn/BodySensor.h>
 
 #include <RBDyn/Joint.h>
 #include <RBDyn/MultiBody.h>
@@ -130,9 +131,13 @@ KinovaRobotModule::KinovaRobotModule() : mc_rbdyn::RobotModule(KINOVA_DESCRIPTIO
   // Define a force sensor
   _forceSensors.push_back(mc_rbdyn::ForceSensor("EEForceSensor", "FT_sensor_wrench", sva::PTransformd::Identity()));
 
-  // Define a device sensor for external torque measurment
+  // Define a device sensor for IMU measurements
+  _bodySensors.push_back(mc_rbdyn::BodySensor("Accelerometer", "FT_sensor_imu", sva::PTransformd::Identity()));
+
+  // Define a device sensor for external torque measurements
   _devices.push_back(mc_rbdyn::ExternalTorqueSensor("externalTorqueSensor", 7).clone());
   _devices.push_back(mc_rbdyn::VirtualTorqueSensor("virtualTorqueSensor", 7).clone());
+  
 
   // Clear body sensors
   _bodySensors.clear();
