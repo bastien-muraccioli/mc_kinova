@@ -1,19 +1,79 @@
 <?xml version="1.0"?>
-
-<robot name="gen3" xmlns:xacro="http://ros.org/wiki/">
+<robot name="gen3" xmlns:xacro="http://ros.org/wiki/xacro">
   <!-- Arguments -->
+  <xacro:arg name="name" default="gen3_arm" />
+  <xacro:arg name="prefix" default="" />
   <xacro:arg name="arm" default="gen3" />
   <xacro:arg name="dof" default="7" />
   <xacro:arg name="vision" default="true" />
-
+  <xacro:arg name="robot_ip" default="192.168.0.1" />
+  <xacro:arg name="username" default="admin" />
+  <xacro:arg name="password" default="admin" />
+  <xacro:arg name="port" default="10000" />
+  <xacro:arg name="port_realtime" default="10001" />
+  <xacro:arg name="session_inactivity_timeout_ms" default="60000" />
+  <xacro:arg name="connection_inactivity_timeout_ms" default="2000" />
   <xacro:arg name="gripper" default="" />
-
-  <xacro:arg name="sim" default="false" />
-  <xacro:arg name="prefix" default="" />
-
+  <xacro:arg name="gripper_joint_name" default="finger_joint" />
+  <xacro:arg name="gripper_max_velocity" default="100.0" />
+  <xacro:arg name="gripper_max_force" default="100.0" />
+  <xacro:arg name="use_internal_bus_gripper_comm" default="false" />
+  <xacro:arg name="use_fake_hardware" default="false" />
+  <xacro:arg name="fake_sensor_commands" default="false" />
+  <xacro:arg name="sim_gazebo" default="false" />
+  <xacro:arg name="sim_ignition" default="false" />
+  <xacro:arg name="simulation_controllers" default="$(find kortex_description)/arm/$(arg arm)/$(arg dof)dof/config/ros2_controllers.yaml" />
+  
+  <!-- import main macro -->
   <xacro:include filename="$(find kortex_description)/robots/kortex_robot.xacro" />
-  <xacro:load_robot arm="$(arg arm)" gripper="$(arg gripper)" dof="$(arg dof)"
-    vision="$(arg vision)" sim="$(arg sim)" prefix="$(arg prefix)" />
+
+  <!-- convert to property to use substitution in function -->
+  <xacro:property name="initial_positions_file" default="$(arg initial_positions_file)"/>
+
+  <!-- create link fixed to the "world" -->
+  <link name="world" />
+  
+  <xacro:load_robot
+      parent="world"
+      arm="$(arg arm)"
+      gripper="$(arg gripper)"
+      gripper_joint_name="$(arg gripper_joint_name)"
+      gripper_max_velocity="$(arg gripper_max_velocity)"
+      gripper_max_force="$(arg gripper_max_force)"
+      dof="$(arg dof)"
+      vision="$(arg vision)"
+      robot_ip="$(arg robot_ip)"
+      username="$(arg username)"
+      password="$(arg password)"
+      port="$(arg port)"
+      port_realtime="$(arg port_realtime)"
+      session_inactivity_timeout_ms="$(arg session_inactivity_timeout_ms)"
+      connection_inactivity_timeout_ms="$(arg connection_inactivity_timeout_ms)"
+      use_internal_bus_gripper_comm="$(arg use_internal_bus_gripper_comm)"
+      prefix="$(arg prefix)"
+      use_fake_hardware="$(arg use_fake_hardware)"
+      fake_sensor_commands="$(arg fake_sensor_commands)"
+      sim_gazebo="$(arg sim_gazebo)"
+      sim_ignition="$(arg sim_ignition)">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+  </xacro:load_robot>
+
+  <xacro:if value="$(arg sim_gazebo)">
+      <gazebo reference="world">
+          <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+              <parameters>$(arg simulation_controllers)</parameters>
+          </plugin>
+      </gazebo>
+  </xacro:if>
+
+  <xacro:if value="$(arg sim_ignition)">
+      <gazebo reference="world">
+          <plugin filename="libign_ros2_control-system.so" name="ign_ros2_control::IgnitionROS2ControlPlugin">
+              <parameters>$(arg simulation_controllers)</parameters>
+              <controller_manager_node_name>$(arg prefix)controller_manager</controller_manager_node_name>
+          </plugin>
+      </gazebo>
+  </xacro:if>
 
   <xacro:include filename="$(find rokubimini_description)/urdf/BFT_SENS_ECAT_M8.urdf.xacro" />
   <xacro:BFT_SENS_ECAT_M8 prefix="FT_sensor" />
